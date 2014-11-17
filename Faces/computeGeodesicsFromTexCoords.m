@@ -1,4 +1,4 @@
-function [XInterp3D, DFinalEuclidean, DFinalGeodesic] = computeGeodesicsFromTexCoords(filePrefix, saveImage)
+function [XInterp3D, DFinalEuclidean, DFinalGeodesic, ti, bc] = computeGeodesicsFromTexCoords(filePrefix, saveImage)
     if nargin < 2
         saveImage = 0;
     end
