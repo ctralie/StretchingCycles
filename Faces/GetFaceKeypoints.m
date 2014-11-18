@@ -14,8 +14,10 @@ function [I, dims] = GetFaceKeypoints(filename)
 
     output = xx_track_detect(DM,TM,im,faces{1},option);
     I = zeros(size(output.pred, 1), 2);
-    I(:, 1) = dims(1) - output.pred(:, 2);
-    I(:, 2) = output.pred(:, 1);
+    if size(I, 1) > 0
+        I(:, 1) = dims(1) - output.pred(:, 2);
+        I(:, 2) = output.pred(:, 1);
+    end
     
 %     imshow(im);
 %     hold on;

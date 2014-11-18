@@ -8,6 +8,16 @@ function [XInterp3D, DFinalEuclidean, DFinalGeodesic, ti, bc] = computeGeodesics
     TCInfo.faces = double(TCInfo.faces);
 
     [I, dims] = GetFaceKeypoints(sprintf('%s.jpg', filePrefix));
+    if size(I, 1) == 0
+        %Handle the case where the keypoints weren't detected properly
+        fprintf(1, 'ERROR: Could not find keypoints for %s\n', filePrefix);
+        XInterp3D = -1;
+        DFinalEuclidean = -1;
+        DFinalGeodesic = -1;
+        ti = -1;
+        bc = -1;
+        return;
+    end
     %Normalize to the range [0, 1]
     I(:, 1) = I(:, 1)/dims(1);
     I(:, 2) = I(:, 2)/dims(2);
