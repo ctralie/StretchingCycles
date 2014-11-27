@@ -4,6 +4,14 @@ NKeypoints = 49;
 NModels = 9;
 Expressions = {'Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise'};
 
+eye1 = [1:5 20:25];
+eye2 = [6:10 26:31];
+eyes = [eye1 eye2];
+nose = 11:19;
+mouth = 32:49;
+typeidx = eyes;
+type = 'eyes';
+
 %Landscape parameters
 xrange = linspace(0, 1, 25);
 yrange = linspace(0, 0.5, 25);
@@ -27,11 +35,12 @@ for ii = 1:NModels
                 N = N + 1;
             end
         end
-        NewD = zeros(N, NKeypoints^2);
+        NewD = zeros(N, length(typeidx)^2);
         idx = 1;
         for kk = 1:length(D)
             if D{kk} ~= -1
-                NewD(idx, :) = D{kk}(:);
+                thisD = D{kk}(typeidx, typeidx);
+                NewD(idx, :) = thisD(:);
                 idx = idx + 1;
             end
         end
