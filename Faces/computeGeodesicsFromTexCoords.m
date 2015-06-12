@@ -1,4 +1,4 @@
-function [XInterp3D, DFinalEuclidean, DFinalGeodesic, ti, bc] = computeGeodesicsFromTexCoords(filePrefix, saveImage)
+function [XInterp3D, DFinalEuclidean, DFinalGeodesic, ti, bc, pred] = computeGeodesicsFromTexCoords(filePrefix, pred, saveImage)
     if nargin < 2
         saveImage = 0;
     end
@@ -7,7 +7,7 @@ function [XInterp3D, DFinalEuclidean, DFinalGeodesic, ti, bc] = computeGeodesics
     TCInfo = load(sprintf('%sTexCoords.mat', filePrefix));
     TCInfo.faces = double(TCInfo.faces);
 
-    [I, dims] = GetFaceKeypoints(sprintf('%s.jpg', filePrefix));
+    [I, dims, pred] = GetFaceKeypoints(sprintf('%s.jpg', filePrefix), pred);
     if size(I, 1) == 0
         %Handle the case where the keypoints weren't detected properly
         fprintf(1, 'ERROR: Could not find keypoints for %s\n', filePrefix);

@@ -49,7 +49,7 @@ if __name__ == '__main__':
 	types = ['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise']
 	for face in faces:
 		for t in types:
-			directory = "%s/%s"%(face, t)
+			directory = "BU_4DFE/%s/%s"%(face, t)
 			files = os.listdir(directory)
 			counter = 0
 			for f in files:

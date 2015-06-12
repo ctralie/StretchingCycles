@@ -1,6 +1,5 @@
 faces = arrayfun(@(x) {sprintf('F%.3i', x)}, (1:9)');
 types = {'Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise'};
-
 for ii = 1:length(faces)
     AllXEuclids = cell(1, length(types));
     AllDEuclids = cell(1, length(types));
@@ -13,8 +12,14 @@ for ii = 1:length(faces)
         DGeodesics = {};
         tis = {};
         bcs = {};
-        foldername = sprintf('%s/%s', faces{ii}, types{jj});
+        foldername = sprintf('BU_4DFE/%s/%s', faces{ii}, types{jj});
+        if exist(sprintf('%s/AllDists.mat', foldername))
+            fprintf(1, 'Skipping already computed %s...\n', foldername);
+            continue;
+        end
+        fprintf(1, 'Computing %s...\n', foldername);
         kk = 0;
+        pred = [];%Stores landmarks used to improve next guess
         while 1
             filePrefix = sprintf('%s/%.3i', foldername, kk);
             fprintf(1, '%s\n', filePrefix);
@@ -22,8 +27,8 @@ for ii = 1:length(faces)
                 fprintf(1, 'Stopping at %s\n', filePrefix);
                 break;
             end
-            [XInterp3D, DFinalEuclidean, DFinalGeodesic, ti, bc] = ...
-                computeGeodesicsFromTexCoords(filePrefix, 1);
+            [XInterp3D, DFinalEuclidean, DFinalGeodesic, ti, bc, pred] = ...
+                computeGeodesicsFromTexCoords(filePrefix, pred, 1);
             XEuclids{end+1} = XInterp3D;
             DEuclids{end+1} = DFinalEuclidean;
             DGeodesics{end+1} = DFinalGeodesic;
@@ -38,7 +43,10 @@ for ii = 1:length(faces)
         Allbcs{jj} = bcs;
     end
     for jj = 1:length(types)
-        foldername = sprintf('%s/%s', faces{ii}, types{jj});
+        foldername = sprintf('BU_4DFE/%s/%s', faces{ii}, types{jj});
+        if exist(sprintf('%s/AllDists.mat', foldername))
+            continue;
+        end
         XEuclids = AllXEuclids{jj};
         DEuclids = AllDEuclids{jj};
         DGeodesics = AllDGeodesics{jj};
