@@ -6,6 +6,8 @@ addpath('RealSenseMATLAB');
 addpath(genpath('../toolbox_fast_marching'));
 addpath(genpath('../ShapeLAB'));
 
+NBasis = 20;
+
 % set path and read in images
 N = 705;
 fpath = 'Chris\';
@@ -15,12 +17,17 @@ ftype = '.png';
 output.pred = [];
 
 faceboundingpoly = [20 21 22 27 28 29 38 39 40 41 42 43 32];
+Shape1 = 0;
 
-for fnum = 0%:N-1
+Cs = zeros(N-1, NBasis*NBasis);
+Fs = zeros(N-1, NBasis*NBasis);
+
+for fnum = 0:N-1
     fprintf(1, 'Doing fnum = %i...\n', fnum);
     rgb = imread(strcat(fpath, 'B-color', num2str(fnum), ftype));
     uv_rgb = uvread(strcat(fpath, 'B-color-uv', num2str(fnum), ftype));
     pc = pcread(strcat(fpath, 'B-cloud', num2str(fnum), ftype));
+    depth = imread(strcat(fpath, 'B-depth', num2str(fnum), ftype));
 
     %Step 1: Find landmarks in high resolution rgb image
     output = xx_track_detect(DM, TM, rgb, output.pred, option);
@@ -40,8 +47,8 @@ for fnum = 0%:N-1
     lm(:, 1) = lm(:, 1)*size(pc, 1);
     lm(:, 2) = lm(:, 2)*size(pc, 2);
     %Make points on the cheek
-    lm(end+1, :) = 0.5*(lm(20, :) + lm(32, :));
-    lm(end+1, :) = 0.5*(lm(29, :) + lm(38, :));
+%     lm(end+1, :) = 0.5*(lm(20, :) + lm(32, :));
+%     lm(end+1, :) = 0.5*(lm(29, :) + lm(38, :));
     lm = double(lm);
     
     %Step 2: Create a mask as the binary AND of a region enclosed by some
@@ -99,14 +106,41 @@ for fnum = 0%:N-1
     %Step 4: Compute the functional map between this face and the first
     %face mesh and use it to compute the shape difference
     
-    %Set up 3D shape descriptors with indicator Gaussians at keypoints
-    S.TRIV = tris;
-    S.X = verts(:, 1);
-    S.Y = verts(:, 2);
-    S.Z = verts(:, 3);
-    %TODO: Finish setting up indicators
+    %Set up laplacian basis
+    thisShape.TRIV = tris;
+    thisShape.X = verts(:, 1);
+    thisShape.Y = verts(:, 2);
+    thisShape.Z = verts(:, 3);
     disp('Calculating Laplacian Basis...');
-    [W, A] = mshlp_matrix(S, struct('dtype', 'cotangent'));
-    [S.evecs, S.evals, S.areas, S.W] = calcLaplacianBasis(S, size(verts, 1));    
-    disp('Finished calculating Laplacian Basis');
+    [thisShape.basis, ~, thisShape.areas] = calcLaplacianBasis(thisShape, NBasis);
+    
+    %Set up indicator functions with Gaussians around keypoints
+    %(TODO: Do correct barycentric interpolation instead of NN)
+    keypoints = 11:5:size(lm, 1);
+    locs = [];
+    thisShape.funcs = zeros(size(verts, 1), length(keypoints));
+    [V, U] = meshgrid(1:size(mask, 2), 1:size(mask, 1));
+    grid = [U(:) V(:)];
+    grid = grid(mask(:), :);
+    NNG = delaunayTriangulation(grid);
+    CloseSigma = 5;
+    for kk = 1:length(keypoints)
+        idx = NNG.nearestNeighbor(lm(keypoints(kk), :));
+        loc = [X(idx) Y(idx) Z(idx)];
+        dists = pdist2(loc, verts);
+        thisShape.funcs(:, kk) = exp(-(dists/CloseSigma).^2);
+    end
+    
+    %Use the first shape as a reference
+    if fnum == 0
+        Shape1 = thisShape;
+        continue;
+    end
+    
+    disp('Calculating Functional Map...');
+    C = calcCFromFuncsAndStructure(Shape1, thisShape, Shape1.funcs, thisShape.funcs, 'basis1', Shape1.basis, 'areas1', Shape1.areas, 'basis2', thisShape.basis, 'areas2', thisShape.areas);
+    V = C'*C;
+    Cs(fnum, :) = C(:);
+    Vs(fnum, :) = V(:);
+    save('ShapeDifferences.mat', 'Cs', 'Vs');
 end
